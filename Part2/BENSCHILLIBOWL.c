@@ -36,8 +36,8 @@ BENSCHILLIBOWL* OpenRestaurant(int max_size, int expected_num_orders) {
     restaurant->orders = NULL;
     restaurant->current_size = 0;
     restaurant->max_size = max_size;
-    restaurant->next_order_num = 1;
-    restaurant->orders_done = 0;
+    restaurant->next_order_number = 1;
+    restaurant->orders_handled  = 0;
     restaurant->expected_num_orders = expected_num_orders;
 
     pthread_mutex_init(&(restaurant->mutex), NULL); //initialize mutex
@@ -52,10 +52,10 @@ BENSCHILLIBOWL* OpenRestaurant(int max_size, int expected_num_orders) {
 /* check that the number of orders received is equal to the number handled (ie.fullfilled). Remember to deallocate your resources */
 
 void CloseRestaurant(BENSCHILLIBOWL* mcg) {
-   printf("Orders done: %d\n", mcg->orders_done);
+   printf("Orders done: %d\n", mcg->orders_handled );
    printf("Orders expected: %d\n", mcg->expected_num_orders);
    //check condition
-   if(mcg->orders_done != mcg->orders_done){
+   if(mcg->orders_handled  != mcg->orders_handled ){
       fprintf(stderr, "Not all orders handled");
       exit(0);
    }
@@ -71,9 +71,9 @@ int AddOrder(BENSCHILLIBOWL* mcg, Order* order) {
    pthread_cond_wait(&(mcg->can_add_orders), &(mcg->mutex));
    }
    
-   order->order_number = mcg->next_order_num;
+   order->order_number = mcg->next_order_number;
    AddOrderToBack(&(mcg->orders), order);
-   mcg->next_order_num++;
+   mcg->next_order_number++;
    mcg->current_size++;
    pthread_cond_broadcast(&(mcg->can_get_orders));
    pthread_mutex_unlock(&(mcg->mutex));
@@ -84,7 +84,7 @@ int AddOrder(BENSCHILLIBOWL* mcg, Order* order) {
 Order *GetOrder(BENSCHILLIBOWL* mcg) {
    pthread_mutex_lock(&(mcg->mutex));
    while (mcg->current_size==0) {
-      if (mcg->orders_done >= mcg->expected_num_orders) {
+      if (mcg->orders_handled  >= mcg->expected_num_orders) {
             pthread_mutex_unlock(&(mcg->mutex));
             return NULL;
        }
@@ -94,7 +94,7 @@ Order *GetOrder(BENSCHILLIBOWL* mcg) {
    Order *order = mcg->orders;
    mcg->orders = mcg->orders->next;
    mcg->current_size--;
-   mcg->orders_done++;
+   mcg->orders_handled ++;
 
    pthread_cond_broadcast(&(mcg->can_add_orders));
    pthread_mutex_unlock(&(mcg->mutex));
